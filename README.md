@@ -2,7 +2,7 @@
 ### How it work:
 ![alt-text](https://github.com/Acool4ik/Serialization-Deserialization-of-Tree/blob/master/images/Screencast.gif)
 ### Structure of tree:
-![alt-text](https://github.com/Acool4ik/Serialization-Deserialization-of-Tree/blob/master/images/Tree.png)
+![alt-text](https://github.com/Acool4ik/Serialization-Deserialization-of-Tree/blob/master/images/Tree.gif)
 ### Description: 
 The simple serialization-deserialization API for storing a structure such as a tree in a binary file for the purpose of transferring data to another host or retrieving data later.
 ### Notes: 
