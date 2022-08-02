@@ -1,6 +1,17 @@
+CC=g++
+CFLAGS=-Wall -Werror -std=gnu++14
+LFLAGS=
+OBJ=main.cpp
+INC=Errors.hpp Buffer.hpp Core.hpp Types.hpp Tree.hpp
+GARBAGE=*.txt a.out exe
+ALERTS_TO_TRASH=2>/dev/null
 
-target: main.cpp
-	g++ -Wall -Werror -std=gnu++14 main.cpp && ./a.out
+
+server: $(OBJ) $(INC)
+	$(CC) $(CFLAGS) $(LFLAGS) $(OBJ) -o exe && ./exe s
+
+client: $(OBJ) $(INC)
+	$(CC) $(CFLAGS) $(LFLAGS) $(OBJ) -o exe && ./exe c
 
 clear:
-	-rm *.txt a.out 2>/dev/null
+	-rm $(GARBAGE) $(ALERTS_TO_TRASH)

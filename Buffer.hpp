@@ -16,12 +16,20 @@ public: /** constructors, destructor and operator= **/
         _size = size;
         _buffer = new uint8_t[size];
     }
+    explicit    Buffer(const Buffer & buf, size_t first, size_t second)
+    {
+        if(second - first <= 0) return;
+        _size = second - first;
+        _buffer = new uint8_t[_size];
+        for(size_t idx = first; idx < second; idx++)
+            _buffer[idx - first] = buf[idx];
+    }
     explicit    Buffer(const Buffer & buf)
     {
         _size = buf._size;
         _top = buf._top;
         _buffer = new uint8_t[_size];
-        for(size_t idx = 0; idx < _top; idx++) _buffer[idx] = buf._buffer[idx];
+        for(size_t idx = 0; idx < _size; idx++) _buffer[idx] = buf._buffer[idx];
     }
     explicit    Buffer(Buffer && buf)
     {
@@ -62,6 +70,7 @@ public: /** work with input/output operations **/
         this->~Buffer();
         in.seekg(0, std::ios::end);
         _size = in.tellg();
+
         _buffer = new uint8_t[_size];
         in.seekg(0, std::ios::beg);
         char byte;
@@ -69,8 +78,8 @@ public: /** work with input/output operations **/
     }
     void        printConsole() const
     {
-        std::cout << "Buffer[" << _top << "] <";
-        for(size_t idx = 0; idx < _top; idx++)
+        std::cout << "Buffer[" << std::dec << _top << "] <";
+        for(size_t idx = 0; idx < _size; idx++)
         {
             std::cout << " ";
             if(_buffer[idx] < 16) std::cout << "0";
@@ -93,6 +102,7 @@ public: /** access element methods **/
     bool        empty() const           { return (_top == 0); }
     bool        full() const            { return (_top == _size); }
     uint8_t &   operator[](size_t idx)  { return _buffer[idx]; }
+    uint8_t     operator[](size_t idx) const  { return _buffer[idx]; }
     uint8_t &   at(size_t idx)
     {
         if(idx >= _top) throw NSErr::Error("Range out index", NSErr::ErrEnum::RANGE_OUT);
@@ -109,7 +119,7 @@ public: /** getters and setters **/
     };
     void        updateTop(size_t newTop = 0)
     {
-        if(newTop >= _size) throw NSErr::Error("Range out index", NSErr::ErrEnum::RANGE_OUT);
+        if(newTop > _size) throw NSErr::Error("Range out index", NSErr::ErrEnum::RANGE_OUT);
         _top = newTop;
     }
 private:

@@ -1,73 +1,51 @@
-#include "Types.hpp"
+#include "Tree.hpp"
 
 
 
-int main(void)
+void server() {
+    /** 1) create root of tree with needed entity **/
+    Tree::NodeTree root(Types::I8(8));
+
+
+    /** 2) form tree needed topology **/
+    root.pushChild(Types::I16(16));
+    root.pushChild(Types::I32(32));
+    root.pushChild(Types::I64(64));
+    root[0].pushChild(Types::Float(3.14));
+    root[1].pushChild(Types::Double(6.28));
+    root[2].pushChild(Types::Text(std::string("Hello")));
+    root[2].pushChild(Types::Text(std::string("World")));
+
+
+    /** 3) serialize tree into buffer **/
+    uint64_t bytes = 0;
+    Tree::traversalTree(root, Tree::calc_save_print_tree, static_cast<void *>(&bytes));
+    Buffer treebuffer(bytes);
+    Tree::traversalTree(root, Tree::packTree, static_cast<void *>(&treebuffer));
+
+
+    /** 4) print buffer and save him in file **/
+    //treebuffer.printConsole();
+    treebuffer.saveInFile("text.txt");
+}
+
+void client() {
+    /** 1) load file into buffer and print buffer **/
+    Buffer filebuffer;
+    filebuffer.loadFromFile("text.txt");
+    //filebuffer.printConsole();
+
+
+    /** 2) deserialize buffer and print retrieved tree **/
+    Tree::NodeTree * retrieved_root;
+    Tree::retrieveTree(&retrieved_root, filebuffer);
+    Tree::traversalTree(*retrieved_root, Tree::calc_save_print_tree, nullptr);
+}
+
+
+int main(int n, char **v)
 {
-    Buffer buffer1(100);
-    Buffer buffer2(100);
-    Buffer buffer3(100);
-    Buffer buffer4(100);
-    Buffer buffer5(100);
-    Buffer buffer6(100);
-    Buffer buffer7(100);
-
-    Types::Text     entity1(std::string("Hello, world"));
-    Types::I8       entity2(8);
-    Types::I16      entity3(16);
-    Types::I32      entity4(32);
-    Types::I64      entity5(64);
-    Types::Float    entity6(3.14);
-    Types::Double   entity7(6.28);
-
-    Types::Primitive & prim1 = entity1;
-    Types::Primitive & prim2 = entity2;
-    Types::Primitive & prim3 = entity3;
-    Types::Primitive & prim4 = entity4;
-    Types::Primitive & prim5 = entity5;
-    Types::Primitive & prim6 = entity6;
-    Types::Primitive & prim7 = entity7;
-
-    prim1.pack(buffer1);
-    prim2.pack(buffer2);
-    prim3.pack(buffer3);
-    prim4.pack(buffer4);
-    prim5.pack(buffer5);
-    prim6.pack(buffer6);
-    prim7.pack(buffer7);
-
-    buffer1.printConsole();
-    buffer2.printConsole();
-    buffer3.printConsole();
-    buffer4.printConsole();
-    buffer5.printConsole();
-    buffer6.printConsole();
-    buffer7.printConsole();
-
-    buffer1.updateTop();
-    buffer2.updateTop();
-    buffer3.updateTop();
-    buffer4.updateTop();
-    buffer5.updateTop();
-    buffer6.updateTop();
-    buffer7.updateTop();
-
-    prim1.unpuck(buffer1);
-    prim2.unpuck(buffer2);
-    prim3.unpuck(buffer3);
-    prim4.unpuck(buffer4);
-    prim5.unpuck(buffer5);
-    prim6.unpuck(buffer6);
-    prim7.unpuck(buffer7);
-
-    prim1.printData();
-    prim2.printData();
-    prim3.printData();
-    prim4.printData();
-    prim5.printData();
-    prim6.printData();
-    prim7.printData();
-
-
+    if(n == 2 && v[1][0] == 's') server();
+    if(n == 2 && v[1][0] == 'c') client();
     return 0;
 }

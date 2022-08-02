@@ -37,10 +37,25 @@ namespace Types {
         explicit Primitive(WrapType wtype, void * data, uint64_t length = 1)
             : _wtype(wtype), _size(wrapTypeSize(wtype)), _length(length), _data(data)
         {}
-    public: /** destructor and virtual methods **/
-        Primitive() = delete;
-        Primitive(const Primitive & pr) = delete;
+    public: /** copy methods/destructor and virtual methods **/
+        Primitive() = default;
+        Primitive(const Primitive & pr) = default;
+        Primitive & operator=(const Primitive & primitive)
+        {
+            if(_data != nullptr) this->~Primitive();
+            _wtype = primitive._wtype;
+            _size = primitive._size;
+            _length = primitive._length;
+            int8_t * newData = new int8_t[_size * _length];
+            for(uint64_t idx = 0; idx < _size * _length; idx ++)
+                newData[idx] = ((int8_t *)(primitive.data()))[idx];
+            _data = (void *)newData;
+            return *this;
+        }
         virtual ~Primitive() {
+            _size = 0;
+            _length = 0;
+            if(_data == nullptr) return;
             switch(_wtype) {
                 case WrapType::Text:    delete [] ((char *)_data); break;
                 case WrapType::I8:      delete ((int8_t *)_data); break;
@@ -51,32 +66,34 @@ namespace Types {
                 case WrapType::Double:  delete ((double *)_data); break;
                 default: exit(EXIT_FAILURE);
             }
-            _size = 0;
-            _length = 0;
             _data = nullptr;
         }
-        virtual void pack(Buffer & buffer) = 0;
-        virtual void unpuck(Buffer & buffer) = 0;
+        virtual void pack(Buffer & buffer) {};
+        virtual void unpuck(Buffer & buffer) {};
+    public: /** don't virtual methods **/
         void printData() {
             switch(_wtype) {
                 case WrapType::Text:
                 {
                     char * _data = (char *)data();
-                    for(uint64_t idx = 0; idx < length(); idx++)
-                        std::cout << _data[idx];
+                    for(uint64_t idx = 0; idx < length(); idx++) std::cout << _data[idx];
                     std::cout << std::endl;
                     break;
                 }
-                case WrapType::I8:      std::cout << +(*(int8_t *)data()) << std::endl; break;
-                case WrapType::I16:     std::cout << *(int16_t *)data() << std::endl; break;
-                case WrapType::I32:     std::cout << *(int32_t *)data() << std::endl; break;
-                case WrapType::I64:     std::cout << *(int64_t *)data() << std::endl; break;
-                case WrapType::Float:   std::cout << *(float *)data() << std::endl; break;
-                case WrapType::Double:  std::cout << *(double *)data() << std::endl; break;
+                case WrapType::I8:      std::cout << std::dec << +(*(int8_t *)  data()) << std::endl; break;
+                case WrapType::I16:     std::cout << std::dec << *(int16_t *)   data()  << std::endl; break;
+                case WrapType::I32:     std::cout << std::dec << *(int32_t *)   data()  << std::endl; break;
+                case WrapType::I64:     std::cout << std::dec << *(int64_t *)   data()  << std::endl; break;
+                case WrapType::Float:   std::cout << std::dec << *(float *)     data()  << std::endl; break;
+                case WrapType::Double:  std::cout << std::dec << *(double *)    data()  << std::endl; break;
                 default: exit(EXIT_FAILURE);
             }
-        };
-    protected:
+        }
+        uint64_t bytes()
+        {
+            return sizeof(WrapType) + sizeof(uint64_t) + sizeof(uint64_t) + (size()*length());
+        }
+    protected: /** protected methods **/
         void packMeta(Buffer & buffer)
         {
             Core::encode((int8_t)wtype(), buffer);
@@ -92,8 +109,9 @@ namespace Types {
         }
     public: /** general getters/setters **/
         WrapType &  wtype()     { return _wtype; }
+        WrapType     wtype() const{ return _wtype; }
         uint64_t &  size()      { return _size; }
-        void *      data()      { return _data; }
+        void *      data() const{ return _data; }
         uint64_t &  length()    { return _length; }
     protected:
         void        setData(void * data) { _data = data; }
@@ -101,8 +119,9 @@ namespace Types {
         WrapType    _wtype;
         uint64_t    _size;
         uint64_t    _length;
-        void *      _data = nullptr;
+        void * _data = nullptr;
     };
+
 
     class Text  : public Primitive {
     public:
@@ -110,7 +129,8 @@ namespace Types {
             : Primitive(WrapType::Text, (void *)(new char[text.size()]), (uint64_t)text.size())
         {
             for(uint64_t idx = 0; idx < text.size(); idx++)
-                ((char *)data())[idx] = text.c_str()[idx];
+                ((char *)data())[idx] = (text.c_str())[idx];
+            ((char *)data())[text.size()] = '\0';
         }
     public:
         void pack(Buffer & buffer) override
@@ -129,6 +149,7 @@ namespace Types {
                 Core::decode(&_data[idx], buffer);
         }
     };
+
 
     class I8    : public Primitive {
     public:
@@ -150,6 +171,8 @@ namespace Types {
             Core::decode(_data, buffer);
         }
     };
+
+
     class I16   : public Primitive {
     public:
         explicit I16(int16_t value)
@@ -170,6 +193,8 @@ namespace Types {
             Core::decode(_data, buffer);
         }
     };
+
+
     class I32   : public Primitive {
     public:
         explicit I32(int32_t value)
@@ -190,6 +215,8 @@ namespace Types {
             Core::decode(_data, buffer);
         }
     };
+
+
     class I64   : public Primitive {
     public:
         explicit I64(int64_t value)
@@ -210,6 +237,8 @@ namespace Types {
             Core::decode(_data, buffer);
         }
     };
+
+
     class Float : public Primitive {
     public:
         explicit Float(float value)
@@ -230,6 +259,8 @@ namespace Types {
             Core::decode(_data, buffer);
         }
     };
+
+
     class Double: public Primitive {
     public:
         explicit Double(double value)
